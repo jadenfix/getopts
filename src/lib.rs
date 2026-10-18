@@ -264,9 +264,10 @@ impl Options {
     /// Create an option that is optional and takes an optional argument.
     ///
     /// A long option's argument must follow an equals sign, as in `--text=foo`.
-    /// A separate argument after a long option is left as a free argument.
+    /// A long option never consumes the following argument as its value.
     /// A short option accepts an attached argument, as in `-tfoo`, or a separate
-    /// argument if it does not begin with a dash, as in `-t foo`.
+    /// argument if it does not look like an option, as in `-t foo`. A lone `-`
+    /// is also accepted as a separate value.
     ///
     /// * `short_name` - e.g. `"h"` for a `-h` option, or `""` for none
     /// * `long_name` - e.g. `"help"` for a `--help` option, or `""` for none
@@ -293,6 +294,15 @@ impl Options {
     ///
     /// let matches = opts.parse(&["-t", "foo"]).unwrap();
     /// assert_eq!(Some("foo".to_owned()), matches.opt_str("text"));
+    /// assert!(matches.free.is_empty());
+    ///
+    /// let matches = opts.parse(&["-t", "-"]).unwrap();
+    /// assert_eq!(Some("-".to_owned()), matches.opt_str("text"));
+    ///
+    /// opts.optflag("h", "help", "display help");
+    /// let matches = opts.parse(&["--text", "--help"]).unwrap();
+    /// assert_eq!(None, matches.opt_str("text"));
+    /// assert!(matches.opt_present("help"));
     /// assert!(matches.free.is_empty());
     /// ```
     pub fn optflagopt(
