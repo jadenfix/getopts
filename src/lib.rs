@@ -21,10 +21,13 @@
 //!
 //! Single-character options are expected to appear on the command line with a
 //! single preceding dash; multiple-character options are expected to be
-//! proceeded by two dashes. Options that expect an argument accept their
+//! proceeded by two dashes. Options with required arguments accept their
 //! argument following either a space or an equals sign. Single-character
-//! options don't require the space. Everything after double-dash "--"  argument
-//! is considered to be a 'free' argument, even if it starts with dash.
+//! options don't require the space. For long options with optional arguments,
+//! an equals sign is required: `--option=value` supplies a value, while
+//! `--option value` leaves `value` as a free argument. See [`Options::optflagopt`].
+//! Everything after double-dash "--" argument is considered to be a 'free'
+//! argument, even if it starts with dash.
 //!
 //! # Usage
 //!
@@ -258,7 +261,12 @@ impl Options {
         self
     }
 
-    /// Create a long option that is optional and takes an optional argument.
+    /// Create an option that is optional and takes an optional argument.
+    ///
+    /// A long option's argument must follow an equals sign, as in `--text=foo`.
+    /// A separate argument after a long option is left as a free argument.
+    /// A short option accepts an attached argument, as in `-tfoo`, or a separate
+    /// argument if it does not begin with a dash, as in `-t foo`.
     ///
     /// * `short_name` - e.g. `"h"` for a `-h` option, or `""` for none
     /// * `long_name` - e.g. `"help"` for a `--help` option, or `""` for none
@@ -278,6 +286,14 @@ impl Options {
     ///
     /// let matches = opts.parse(&["--text=foo"]).unwrap();
     /// assert_eq!(Some("foo".to_owned()), matches.opt_str("text"));
+    ///
+    /// let matches = opts.parse(&["--text", "foo"]).unwrap();
+    /// assert_eq!(None, matches.opt_str("text"));
+    /// assert_eq!(vec!["foo"], matches.free);
+    ///
+    /// let matches = opts.parse(&["-t", "foo"]).unwrap();
+    /// assert_eq!(Some("foo".to_owned()), matches.opt_str("text"));
+    /// assert!(matches.free.is_empty());
     /// ```
     pub fn optflagopt(
         &mut self,
